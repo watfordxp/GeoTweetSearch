@@ -305,7 +305,7 @@ def writeUserToCache(user, doUpdate):
     # getting MongoDB to use an index with provider ID in it (not sure why, but it
     # wouldn't use the index).
     collection.ensure_index([('is_followers_loaded', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)], sparse = True)
-    collection.ensure_index([('geocode.placeId', pymongo.ASCENDING), ('is_followers_loaded', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)], sparse = True)
+    collection.ensure_index([('geocode.providerId', pymongo.ASCENDING), ('geocode.placeId', pymongo.ASCENDING), ('is_followers_loaded', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)], sparse = True)
 
     ensureIndexTime = getEpochMs() - timer
     timer = getEpochMs()
@@ -332,7 +332,7 @@ def writeTweetToCache(tweet):
     collection = getTweetCollection(tweet.instance_key)
 
     collection.ensure_index([('timestamp', pymongo.ASCENDING)]) # for cache download where no place is specified.
-    collection.ensure_index([('geocode.placeId', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)])
+    collection.ensure_index([('geocode.providerId', pymongo.ASCENDING), ('geocode.placeId', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)])
 
     _writeItemToCache(getTweetCollection, None, tweet.instance_key, tweet.data, tweet.isDataNew, tweet.timestamp, placeId)
     tweet.isDataNew = False
@@ -458,12 +458,12 @@ def cursorItemsFromCache(instanceId, getCollectionFunc, placeId=None, epochMsSta
     if typeSpecificHint is None:
         if timestampDic is not None:
             if placeId is not None:
-                hint = [('geocode.placeId', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)]
+                hint = [('geocode.providerId', pymongo.ASCENDING), ('geocode.placeId', pymongo.ASCENDING), ('timestamp', pymongo.ASCENDING)]
             else:
                 hint = [('timestamp', pymongo.ASCENDING)]
         else:
             if placeId is not None:
-                hint = [('geocode.placeId', pymongo.ASCENDING)]
+                hint = [('geocode.providerId', pymongo.ASCENDING), ('geocode.placeId', pymongo.ASCENDING)]
             else:
                 hint = None
     else:
@@ -814,7 +814,7 @@ def cursorUsersFromCache(instanceId, placeId=None, epochMsStartRange=None, epoch
         hint.append(('known_followees', pymongo.ASCENDING))
     else:
         if placeId is not None:
-            hint.append(('geocode.placeId', pymongo.ASCENDING))
+            hint.append(('geocode.providerId', pymongo.ASCENDING), ('geocode.placeId', pymongo.ASCENDING))
 
         if isFollowersLoadedRequirement is not None:
             hint.append(('is_followers_loaded', pymongo.ASCENDING))
